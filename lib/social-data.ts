@@ -13,7 +13,7 @@ const VIBE_COLORS = [
   "from-emerald-500/20 to-cyan-500/10"
 ];
 
-type RawPost = Awaited<ReturnType<typeof fetchPosts>> extends (infer U)[] ? U : never;
+type RawPost = NonNullable<Awaited<ReturnType<typeof fetchPosts>>>[number];
 
 function withVibe(post: Omit<SocialPost, "vibeColor">, index: number): SocialPost {
   return { ...post, vibeColor: VIBE_COLORS[index % VIBE_COLORS.length] };
