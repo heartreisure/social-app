@@ -1,0 +1,9 @@
+.gse/local/
+.gse/
+.cursor/
+node_modules/
+.next/
+out/
+.env.local
+.env.production.local
+.DS_Store
