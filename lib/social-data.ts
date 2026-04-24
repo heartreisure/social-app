@@ -3,7 +3,7 @@
 import { getUserPosts, loggedInUser, posts as mockPosts } from "@/lib/mock-data";
 import { getAuthenticatedUser, getSupabaseAccessToken } from "@/lib/supabase-auth";
 import { SocialPost } from "@/lib/social-types";
-import { createPost, fetchPosts, fetchUserPosts } from "@/lib/supabase-rest";
+import { createPost, fetchPosts, fetchProfileById, fetchUserPosts } from "@/lib/supabase-rest";
 
 const VIBE_COLORS = [
   "from-fuchsia-500/30 to-cyan-400/10",
@@ -41,16 +41,21 @@ export async function getFeedPosts(): Promise<SocialPost[]> {
 
 export async function getProfileData() {
   const authUser = await getAuthenticatedUser();
+  const accessToken = getSupabaseAccessToken();
   const userId = authUser?.id ?? process.env.NEXT_PUBLIC_DEMO_USER_ID ?? loggedInUser.id;
+  const profileRow = await fetchProfileById(userId, accessToken);
   const userName =
+    profileRow?.display_name ??
     authUser?.user_metadata?.name ??
     authUser?.user_metadata?.full_name ??
     loggedInUser.name;
-  const handle = authUser?.user_metadata?.preferred_username
-    ? `@${authUser.user_metadata.preferred_username}`
-    : authUser?.email
-      ? `@${authUser.email.split("@")[0]}`
-      : loggedInUser.handle;
+  const handle = profileRow?.handle
+    ? `@${profileRow.handle}`
+    : authUser?.user_metadata?.preferred_username
+      ? `@${authUser.user_metadata.preferred_username}`
+      : authUser?.email
+        ? `@${authUser.email.split("@")[0]}`
+        : loggedInUser.handle;
 
   const data = await fetchUserPosts(userId);
 
@@ -75,7 +80,12 @@ export async function getProfileData() {
     user: {
       id: userId,
       name: userName,
-      handle
+      handle,
+      bioShort: profileRow?.bio_short ?? "",
+      age: profileRow?.age ?? null,
+      roleLabel: profileRow?.role_label ?? "member",
+      isAdmin: Boolean(profileRow?.is_admin),
+      isCreator: Boolean(profileRow?.is_creator)
     },
     userPosts: mapped,
     postCount: mapped.length,

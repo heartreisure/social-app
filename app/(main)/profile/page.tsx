@@ -7,7 +7,16 @@ import { getProfileData } from "@/lib/social-data";
 import { SocialPost } from "@/lib/social-types";
 
 type ProfileData = {
-  user: { id: string; name: string; handle: string };
+  user: {
+    id: string;
+    name: string;
+    handle: string;
+    bioShort: string;
+    age: number | null;
+    roleLabel: string;
+    isAdmin: boolean;
+    isCreator: boolean;
+  };
   userPosts: SocialPost[];
   postCount: number;
   vibeStreak: number;
@@ -119,6 +128,27 @@ export default function ProfilePage() {
           </div>
         </div>
       </motion.header>
+
+      <article className="vibe-card p-4">
+        <h2 className="text-sm font-semibold text-slate-200">Account details</h2>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <p className="rounded-lg border border-white/10 bg-slate-900/35 px-3 py-2 text-slate-300">
+            Role: <span className="text-slate-100">{profileData.user.roleLabel}</span>
+          </p>
+          <p className="rounded-lg border border-white/10 bg-slate-900/35 px-3 py-2 text-slate-300">
+            Age: <span className="text-slate-100">{profileData.user.age ?? "Not set"}</span>
+          </p>
+          <p className="rounded-lg border border-white/10 bg-slate-900/35 px-3 py-2 text-slate-300">
+            Creator: <span className="text-slate-100">{profileData.user.isCreator ? "Yes" : "No"}</span>
+          </p>
+          <p className="rounded-lg border border-white/10 bg-slate-900/35 px-3 py-2 text-slate-300">
+            Admin: <span className="text-slate-100">{profileData.user.isAdmin ? "Yes" : "No"}</span>
+          </p>
+        </div>
+        <p className="mt-3 rounded-lg border border-white/10 bg-slate-900/35 px-3 py-2 text-xs text-slate-300">
+          Bio: <span className="text-slate-100">{profileData.user.bioShort || "No bio yet."}</span>
+        </p>
+      </article>
 
       <div className="grid grid-cols-2 gap-3">
         <motion.article className="vibe-card p-4" layout>
