@@ -10,11 +10,12 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev 2>/dev/null || npm install --omit=dev
+RUN npm ci 2>/dev/null || npm install
 
 COPY . .
 
 RUN npm run build
+RUN npm prune --omit=dev
 
 EXPOSE 3000
 HEALTHCHECK CMD wget --no-verbose --tries=1 --spider http://localhost:$PORT/ || exit 1
