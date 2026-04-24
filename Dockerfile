@@ -4,8 +4,7 @@ FROM node:20-slim
 
 ARG SOURCE_COMMIT=unknown
 
-ENV NODE_ENV=production \
-    PORT=3000
+ENV PORT=3000
 
 WORKDIR /app
 
@@ -16,6 +15,8 @@ COPY . .
 
 RUN npm run build
 RUN npm prune --omit=dev
+
+ENV NODE_ENV=production
 
 EXPOSE 3000
 HEALTHCHECK CMD wget --no-verbose --tries=1 --spider http://localhost:$PORT/ || exit 1
