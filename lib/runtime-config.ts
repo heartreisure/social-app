@@ -1,19 +1,32 @@
-const REQUIRED_PUBLIC_ENV_KEYS = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"] as const;
-
-type RequiredEnvKey = (typeof REQUIRED_PUBLIC_ENV_KEYS)[number];
-
-function readPublicEnv(key: RequiredEnvKey): string | null {
-  const value = process.env[key]?.trim();
-  return value ? value : null;
+function readEnvValue(value: string | undefined): string | null {
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
 }
 
-export function getMissingPublicEnvKeys(): RequiredEnvKey[] {
-  return REQUIRED_PUBLIC_ENV_KEYS.filter((key) => !readPublicEnv(key));
+function readSupabaseUrl(): string | null {
+  // Use direct env key access so Next.js can inline at build-time.
+  return readEnvValue(process.env.NEXT_PUBLIC_SUPABASE_URL);
+}
+
+function readSupabaseAnonKey(): string | null {
+  // Use direct env key access so Next.js can inline at build-time.
+  return readEnvValue(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+}
+
+export function getMissingPublicEnvKeys(): Array<"NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_ANON_KEY"> {
+  const missing: Array<"NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_ANON_KEY"> = [];
+  if (!readSupabaseUrl()) {
+    missing.push("NEXT_PUBLIC_SUPABASE_URL");
+  }
+  if (!readSupabaseAnonKey()) {
+    missing.push("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  }
+  return missing;
 }
 
 export function getSupabaseRuntimeConfig() {
-  const url = readPublicEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const anonKey = readPublicEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  const url = readSupabaseUrl();
+  const anonKey = readSupabaseAnonKey();
   if (!url || !anonKey) {
     return null;
   }
