@@ -23,6 +23,11 @@ type RegisterPayload = {
   roleLabel: string;
 };
 
+type LoginPayload = {
+  email: string;
+  password: string;
+};
+
 function getAuthConfig() {
   return getSupabaseRuntimeConfig();
 }
@@ -143,4 +148,68 @@ export async function getAuthenticatedUser(): Promise<SupabaseAuthUser | null> {
   }
 
   return (await response.json()) as SupabaseAuthUser;
+}
+
+export async function loginUser(payload: LoginPayload) {
+  const config = getAuthConfig();
+  if (!config) {
+    return {
+      ok: false as const,
+      reason: "missing_config" as const,
+      message: "Missing Supabase public configuration."
+    };
+  }
+
+  const response = await fetch(`${config.url}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${config.anonKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      email: payload.email.trim(),
+      password: payload.password
+    })
+  });
+
+  if (!response.ok) {
+    let details = "";
+    try {
+      const errorJson = (await response.json()) as {
+        msg?: string;
+        message?: string;
+        error_description?: string;
+        error_code?: string;
+      };
+      details =
+        errorJson.msg ??
+        errorJson.message ??
+        errorJson.error_description ??
+        errorJson.error_code ??
+        "";
+    } catch {
+      details = "";
+    }
+    return {
+      ok: false as const,
+      reason: "login_failed" as const,
+      message: details || `Login failed (HTTP ${response.status}).`
+    };
+  }
+
+  const json = (await response.json()) as {
+    access_token?: string;
+    user?: SupabaseAuthUser;
+  };
+
+  if (json.access_token && typeof window !== "undefined") {
+    localStorage.setItem("sb-access-token", json.access_token);
+  }
+
+  return {
+    ok: true as const,
+    userId: json.user?.id ?? null,
+    accessToken: json.access_token ?? null
+  };
 }

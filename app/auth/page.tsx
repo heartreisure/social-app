@@ -144,6 +144,10 @@ export default function AuthPage() {
           <Link className="text-xs text-slate-300 underline" href="/feed">
             Continue to feed
           </Link>
+          <span className="mx-2 text-xs text-slate-500">•</span>
+          <Link className="text-xs text-slate-300 underline" href="/login">
+            Already have an account? Login
+          </Link>
         </div>
       </motion.section>
     </main>
