@@ -56,7 +56,11 @@ export function getSupabaseAccessToken() {
 export async function registerUser(payload: RegisterPayload) {
   const config = getAuthConfig();
   if (!config) {
-    return { ok: false as const, reason: "missing_config" as const };
+    return {
+      ok: false as const,
+      reason: "missing_config" as const,
+      message: "Missing Supabase public configuration."
+    };
   }
 
   const response = await fetch(`${config.url}/auth/v1/signup`, {
@@ -79,7 +83,28 @@ export async function registerUser(payload: RegisterPayload) {
   });
 
   if (!response.ok) {
-    return { ok: false as const, reason: "signup_failed" as const };
+    let details = "";
+    try {
+      const errorJson = (await response.json()) as {
+        msg?: string;
+        message?: string;
+        error_description?: string;
+        error_code?: string;
+      };
+      details =
+        errorJson.msg ??
+        errorJson.message ??
+        errorJson.error_description ??
+        errorJson.error_code ??
+        "";
+    } catch {
+      details = "";
+    }
+    return {
+      ok: false as const,
+      reason: "signup_failed" as const,
+      message: details || `Signup failed (HTTP ${response.status}).`
+    };
   }
 
   const json = (await response.json()) as {

@@ -41,7 +41,7 @@ export default function AuthPage() {
     });
 
     if (!result.ok) {
-      setMessage("Signup failed. Check Supabase config.");
+      setMessage(result.message ?? "Signup failed. Check Supabase config.");
       setSubmitting(false);
       return;
     }
