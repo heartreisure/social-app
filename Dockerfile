@@ -20,5 +20,6 @@ RUN npm install -g serve
 ENV NODE_ENV=production
 
 EXPOSE 3000
-HEALTHCHECK CMD wget --no-verbose --tries=1 --spider http://localhost:$PORT/ || exit 1
+HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=6 \
+  CMD node -e "require('http').get('http://127.0.0.1:' + (process.env.PORT || 3000), r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
 CMD ["serve", "-s", "out", "-l", "3000"]
