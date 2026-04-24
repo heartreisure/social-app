@@ -23,6 +23,8 @@ const serveConfig = {
   public: ".",
   cleanUrls: false,
   trailingSlash: true,
+  renderSingle: true,
+  directoryListing: false,
   rewrites: [],
   headers: [
     {
