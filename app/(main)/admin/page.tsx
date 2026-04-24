@@ -3,15 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
-import { AUTO_FLAG_OPEN_REPORT_THRESHOLD, shouldAutoFlagPost } from "@/lib/moderation-policy";
-import { getAuthenticatedUser, getSupabaseAccessToken } from "@/lib/supabase-auth";
+import { AUTO_FLAG_OPEN_REPORT_THRESHOLD, shouldAutoFlagPost } from "../../../lib/moderation-policy";
+import { getAuthenticatedUser, getSupabaseAccessToken } from "../../../lib/supabase-auth";
 import {
   fetchPostReports,
   fetchPostsForModeration,
   fetchUserProfiles,
   moderatePost,
   reviewPostReport
-} from "@/lib/supabase-rest";
+} from "../../../lib/supabase-rest";
 
 type AdminProfile = {
   id: string;

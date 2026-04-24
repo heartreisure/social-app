@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { PostComposer } from "@/components/post-composer";
-import { getAuthenticatedUser, getSupabaseAccessToken } from "@/lib/supabase-auth";
-import { getFeedPosts } from "@/lib/social-data";
-import { createPostReport } from "@/lib/supabase-rest";
-import { SocialPost } from "@/lib/social-types";
+import { PostComposer } from "../../../components/post-composer";
+import { getAuthenticatedUser, getSupabaseAccessToken } from "../../../lib/supabase-auth";
+import { getFeedPosts } from "../../../lib/social-data";
+import { createPostReport } from "../../../lib/supabase-rest";
+import { SocialPost } from "../../../lib/social-types";
 
 export default function FeedPage() {
   const [posts, setPosts] = useState<SocialPost[]>([]);
