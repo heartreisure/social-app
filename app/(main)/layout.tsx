@@ -75,7 +75,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
     >
       <PageTransition>{children}</PageTransition>
       <nav
-        className={`vibe-card fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between px-3 py-2 transition ${
+        className={`vibe-card fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center gap-2 overflow-x-auto px-3 py-2 transition ${
           keyboardOpen
             ? "pointer-events-none translate-y-5 opacity-0"
             : "pointer-events-auto translate-y-0 opacity-100"
@@ -120,6 +120,16 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           }`}
         >
           Admin
+        </Link>
+        <Link
+          href="/admin-access"
+          className={`flex h-11 min-w-20 items-center justify-center rounded-xl border px-3 text-xs font-medium transition ${
+            pathname === "/admin-access"
+              ? "border-cyan-300/60 bg-cyan-500/20 text-cyan-100 shadow-lg shadow-cyan-900/25"
+              : "border-white/10 bg-slate-900/45 text-slate-100"
+          }`}
+        >
+          Access
         </Link>
       </nav>
     </main>

@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { AUTO_FLAG_OPEN_REPORT_THRESHOLD, shouldAutoFlagPost } from "../../../lib/moderation-policy";
 import { getAuthenticatedUser, getSupabaseAccessToken } from "../../../lib/supabase-auth";
 import {
+  fetchProfileById,
   fetchPostReports,
   fetchPostsForModeration,
   fetchUserProfiles,
@@ -42,11 +43,6 @@ type AdminReport = {
   created_at: string;
 };
 
-function isAdmin(role: string | undefined) {
-  const normalized = (role ?? "").toLowerCase();
-  return normalized === "admin" || normalized === "moderator";
-}
-
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [allowed, setAllowed] = useState(false);
@@ -62,9 +58,10 @@ export default function AdminPage() {
     let mounted = true;
     async function load() {
       const authUser = await getAuthenticatedUser();
-      const roleLabel = authUser?.user_metadata?.role_label;
-      const hasAccess = isAdmin(roleLabel);
       setModeratorId(authUser?.id ?? null);
+      const token = getSupabaseAccessToken();
+      const ownProfile = authUser ? await fetchProfileById(authUser.id, token) : null;
+      const hasAccess = Boolean(ownProfile?.is_admin || ownProfile?.is_creator);
 
       if (!mounted) return;
       setAllowed(hasAccess);
@@ -74,7 +71,6 @@ export default function AdminPage() {
         return;
       }
 
-      const token = getSupabaseAccessToken();
       const [profileRows, postRows, reportRows] = await Promise.all([
         fetchUserProfiles(token),
         fetchPostsForModeration(120, token),
@@ -258,8 +254,8 @@ export default function AdminPage() {
         <article className="vibe-card p-5">
           <h1 className="text-xl font-semibold text-slate-100">Admin only</h1>
           <p className="mt-2 text-sm text-slate-300">
-            Set your account role to <code>Admin</code> or <code>Moderator</code> to open the
-            moderation panel.
+            This page is available only for approved admins. Ask the creator on the Admin Access
+            page if you need permissions.
           </p>
         </article>
       </section>

@@ -14,8 +14,8 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [handle, setHandle] = useState("");
+  const [age, setAge] = useState("");
   const [bio, setBio] = useState("");
-  const [role, setRole] = useState("Creator");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -23,8 +23,13 @@ export default function AuthPage() {
     event.preventDefault();
     if (submitting) return;
 
-    if (!email || !password || !name || !handle || !bio) {
+    if (!email || !password || !name || !handle || !bio || !age) {
       setMessage("Please fill all fields.");
+      return;
+    }
+    const parsedAge = Number(age);
+    if (!Number.isInteger(parsedAge) || parsedAge < 13 || parsedAge > 120) {
+      setMessage("Age must be a whole number between 13 and 120.");
       return;
     }
 
@@ -37,7 +42,7 @@ export default function AuthPage() {
       name,
       handle,
       bioShort: bio,
-      roleLabel: role
+      roleLabel: "member"
     });
 
     if (!result.ok) {
@@ -52,7 +57,8 @@ export default function AuthPage() {
         display_name: name,
         handle,
         bio_short: bio,
-        role_label: role,
+        role_label: "member",
+        age: parsedAge,
         accessToken: result.accessToken
       });
     }
@@ -104,9 +110,12 @@ export default function AuthPage() {
           />
           <input
             className="h-11 w-full rounded-xl border border-white/10 bg-slate-900/45 px-3 text-sm text-slate-100 outline-none focus:border-cyan-300/60"
-            placeholder="Role (e.g. Student, Builder)"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
+            placeholder="Age (13-120)"
+            type="number"
+            min={13}
+            max={120}
+            value={age}
+            onChange={(e) => setAge(e.target.value)}
           />
           <textarea
             className="min-h-20 w-full rounded-xl border border-white/10 bg-slate-900/45 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300/60"

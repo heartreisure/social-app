@@ -23,6 +23,7 @@ type UserProfileInput = {
   handle: string;
   bio_short: string;
   role_label: string;
+  age?: number | null;
   accessToken?: string | null;
 };
 
@@ -32,6 +33,21 @@ type UserProfileRow = {
   handle: string;
   bio_short: string;
   role_label: string;
+  age: number | null;
+  is_admin: boolean;
+  is_creator: boolean;
+  admin_approved_at: string | null;
+  admin_approved_by: string | null;
+  created_at: string;
+};
+
+type AdminRequestRow = {
+  id: string;
+  user_id: string;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  decided_by: string | null;
+  decided_at: string | null;
   created_at: string;
 };
 
@@ -213,7 +229,8 @@ export async function upsertUserProfile(input: UserProfileInput) {
         display_name: input.display_name,
         handle: input.handle.replace(/^@/, ""),
         bio_short: input.bio_short,
-        role_label: input.role_label
+        role_label: input.role_label,
+        age: input.age ?? null
       }
     ])
   });
@@ -228,7 +245,7 @@ export async function fetchUserProfiles(accessToken?: string | null): Promise<Us
   }
 
   const response = await fetch(
-    `${config.url}/rest/v1/user_profiles?select=id,display_name,handle,bio_short,role_label,created_at&order=created_at.desc&limit=100`,
+    `${config.url}/rest/v1/user_profiles?select=id,display_name,handle,bio_short,role_label,age,is_admin,is_creator,admin_approved_at,admin_approved_by,created_at&order=created_at.desc&limit=200`,
     {
       headers: {
         apikey: config.anonKey,
@@ -243,6 +260,195 @@ export async function fetchUserProfiles(accessToken?: string | null): Promise<Us
   }
 
   return (await response.json()) as UserProfileRow[];
+}
+
+export async function fetchOwnProfile(accessToken?: string | null): Promise<UserProfileRow | null> {
+  const config = getSupabaseConfig();
+  if (!config || !accessToken) {
+    return null;
+  }
+
+  const response = await fetch(
+    `${config.url}/rest/v1/user_profiles?select=id,display_name,handle,bio_short,role_label,age,is_admin,is_creator,admin_approved_at,admin_approved_by,created_at&id=eq.${encodeURIComponent("auth.uid()")}`,
+    {
+      headers: {
+        apikey: config.anonKey,
+        Authorization: `Bearer ${accessToken}`
+      },
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    // Fallback query by user id via helper endpoint in caller.
+    return null;
+  }
+
+  const rows = (await response.json()) as UserProfileRow[];
+  return rows[0] ?? null;
+}
+
+export async function fetchProfileById(
+  userId: string,
+  accessToken?: string | null
+): Promise<UserProfileRow | null> {
+  const config = getSupabaseConfig();
+  if (!config || !userId) {
+    return null;
+  }
+
+  const response = await fetch(
+    `${config.url}/rest/v1/user_profiles?select=id,display_name,handle,bio_short,role_label,age,is_admin,is_creator,admin_approved_at,admin_approved_by,created_at&id=eq.${userId}&limit=1`,
+    {
+      headers: {
+        apikey: config.anonKey,
+        Authorization: `Bearer ${accessToken ?? config.anonKey}`
+      },
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+  const rows = (await response.json()) as UserProfileRow[];
+  return rows[0] ?? null;
+}
+
+export async function fetchProfileByHandle(
+  handle: string,
+  accessToken?: string | null
+): Promise<UserProfileRow | null> {
+  const config = getSupabaseConfig();
+  const normalized = handle.trim().replace(/^@/, "");
+  if (!config || !normalized) {
+    return null;
+  }
+  const response = await fetch(
+    `${config.url}/rest/v1/user_profiles?select=id,display_name,handle,bio_short,role_label,age,is_admin,is_creator,admin_approved_at,admin_approved_by,created_at&handle=eq.${encodeURIComponent(
+      normalized
+    )}&limit=1`,
+    {
+      headers: {
+        apikey: config.anonKey,
+        Authorization: `Bearer ${accessToken ?? config.anonKey}`
+      },
+      cache: "no-store"
+    }
+  );
+  if (!response.ok) {
+    return null;
+  }
+  const rows = (await response.json()) as UserProfileRow[];
+  return rows[0] ?? null;
+}
+
+export async function createAdminRequest(input: {
+  userId: string;
+  reason: string;
+  accessToken?: string | null;
+}) {
+  const config = getSupabaseConfig();
+  if (!config || !input.userId || !input.reason.trim()) {
+    return false;
+  }
+  const response = await fetch(`${config.url}/rest/v1/admin_requests`, {
+    method: "POST",
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${input.accessToken ?? config.anonKey}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=ignore-duplicates,return=minimal"
+    },
+    body: JSON.stringify([
+      {
+        user_id: input.userId,
+        reason: input.reason.trim(),
+        status: "pending"
+      }
+    ])
+  });
+  return response.ok;
+}
+
+export async function fetchAdminRequests(
+  accessToken?: string | null,
+  status: "pending" | "approved" | "rejected" | "all" = "pending"
+): Promise<AdminRequestRow[] | null> {
+  const config = getSupabaseConfig();
+  if (!config) {
+    return null;
+  }
+  const statusFilter = status === "all" ? "" : `&status=eq.${status}`;
+  const response = await fetch(
+    `${config.url}/rest/v1/admin_requests?select=id,user_id,reason,status,decided_by,decided_at,created_at&order=created_at.desc${statusFilter}&limit=200`,
+    {
+      headers: {
+        apikey: config.anonKey,
+        Authorization: `Bearer ${accessToken ?? config.anonKey}`
+      },
+      cache: "no-store"
+    }
+  );
+  if (!response.ok) {
+    return null;
+  }
+  return (await response.json()) as AdminRequestRow[];
+}
+
+export async function decideAdminRequest(input: {
+  requestId: string;
+  decision: "approved" | "rejected";
+  decidedBy: string;
+  accessToken?: string | null;
+}) {
+  const config = getSupabaseConfig();
+  if (!config || !input.requestId) {
+    return false;
+  }
+  const response = await fetch(`${config.url}/rest/v1/admin_requests?id=eq.${input.requestId}`, {
+    method: "PATCH",
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${input.accessToken ?? config.anonKey}`,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal"
+    },
+    body: JSON.stringify({
+      status: input.decision,
+      decided_by: input.decidedBy,
+      decided_at: new Date().toISOString()
+    })
+  });
+  return response.ok;
+}
+
+export async function setUserAdminStatus(input: {
+  userId: string;
+  isAdmin: boolean;
+  decidedBy: string;
+  accessToken?: string | null;
+}) {
+  const config = getSupabaseConfig();
+  if (!config || !input.userId) {
+    return false;
+  }
+  const response = await fetch(`${config.url}/rest/v1/user_profiles?id=eq.${input.userId}`, {
+    method: "PATCH",
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${input.accessToken ?? config.anonKey}`,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal"
+    },
+    body: JSON.stringify({
+      is_admin: input.isAdmin,
+      role_label: input.isAdmin ? "admin" : "member",
+      admin_approved_by: input.isAdmin ? input.decidedBy : null,
+      admin_approved_at: input.isAdmin ? new Date().toISOString() : null
+    })
+  });
+  return response.ok;
 }
 
 export async function createPostReport(input: CreateReportInput) {
