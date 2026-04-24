@@ -1,3 +1,5 @@
+import path from "node:path";
+
 /** @type {import('next').NextConfig} */
 const isGithubActions = process.env.GITHUB_ACTIONS === "true";
 const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1] ?? "";
@@ -15,6 +17,13 @@ const nextConfig = {
   },
   experimental: {
     typedRoutes: true
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...(config.resolve.alias ?? {}),
+      "@": path.resolve(process.cwd())
+    };
+    return config;
   }
 };
 
