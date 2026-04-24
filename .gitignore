@@ -6,7 +6,10 @@ node_modules/
 out/
 .env.local
 .env.production.local
+.env
 .DS_Store
 .worktrees/
 artifacts/
 coverage/
+docs/sprints/
+docs/transcripts/
