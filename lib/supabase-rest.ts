@@ -1,5 +1,7 @@
 "use client";
 
+import { getSupabaseRuntimeConfig } from "@/lib/runtime-config";
+
 type PostRow = {
   id: string;
   user_id: string;
@@ -52,12 +54,7 @@ type PostReportRow = {
 };
 
 function getSupabaseConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) {
-    return null;
-  }
-  return { url, anonKey };
+  return getSupabaseRuntimeConfig();
 }
 
 export async function fetchPosts(limit = 50, accessToken?: string | null): Promise<PostRow[] | null> {

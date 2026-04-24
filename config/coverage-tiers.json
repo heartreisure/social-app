@@ -1,0 +1,12 @@
+{
+  "thresholds": {
+    "critical": 75,
+    "standard": 60,
+    "low": 40
+  },
+  "tiers": {
+    "critical": ["lib/moderation-policy.ts"],
+    "standard": ["lib/runtime-config.ts", "lib/supabase-auth.ts"],
+    "low": ["lib/runtime-config.ts"]
+  }
+}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
+import { AUTO_FLAG_OPEN_REPORT_THRESHOLD, shouldAutoFlagPost } from "@/lib/moderation-policy";
 import { getAuthenticatedUser, getSupabaseAccessToken } from "@/lib/supabase-auth";
 import {
   fetchPostReports,
@@ -55,6 +56,7 @@ export default function AdminPage() {
   const [query, setQuery] = useState("");
   const [moderatorId, setModeratorId] = useState<string | null>(null);
   const [autoEscalating, setAutoEscalating] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -94,6 +96,7 @@ export default function AdminPage() {
 
   async function runModeration(postId: string, status: "flagged" | "hidden" | "active") {
     if (!moderatorId) return;
+    setActionFeedback(null);
     const token = getSupabaseAccessToken();
     const ok = await moderatePost({
       postId,
@@ -102,7 +105,11 @@ export default function AdminPage() {
       accessToken: token,
       reason: status === "flagged" ? "flagged by moderator" : ""
     });
-    if (!ok) return;
+    if (!ok) {
+      setActionFeedback("Moderation action failed. Please retry with admin permissions.");
+      return;
+    }
+    setActionFeedback(`Moderation updated: ${status}.`);
     setPosts((current) =>
       current.map((post) =>
         post.id === postId
@@ -118,6 +125,7 @@ export default function AdminPage() {
 
   async function reviewReport(reportId: string, status: "resolved" | "dismissed" | "open") {
     if (!moderatorId) return;
+    setActionFeedback(null);
     const token = getSupabaseAccessToken();
     const ok = await reviewPostReport({
       reportId,
@@ -125,7 +133,11 @@ export default function AdminPage() {
       reviewerId: moderatorId,
       accessToken: token
     });
-    if (!ok) return;
+    if (!ok) {
+      setActionFeedback("Report review failed. Please verify your role and try again.");
+      return;
+    }
+    setActionFeedback(`Report updated: ${status}.`);
     setReports((current) =>
       current.map((report) =>
         report.id === reportId
@@ -192,7 +204,7 @@ export default function AdminPage() {
     const criticalOpenEntries = prioritizedReports.filter((entry) => {
       const openCount = entry.reports.filter((report) => report.status === "open").length;
       const post = posts.find((item) => item.id === entry.postId);
-      return openCount >= 5 && post?.moderation_status !== "flagged" && post?.moderation_status !== "hidden";
+      return shouldAutoFlagPost(openCount, post?.moderation_status);
     });
 
     if (!criticalOpenEntries.length) return;
@@ -267,7 +279,8 @@ export default function AdminPage() {
           Review users and posts across the platform.
         </p>
         <p className="mt-1 text-xs text-amber-200/90">
-          Auto-escalation active: posts with 5+ open reports are automatically flagged.
+          Auto-escalation active: posts with {AUTO_FLAG_OPEN_REPORT_THRESHOLD}+ open reports are
+          automatically flagged.
         </p>
       </motion.header>
 
@@ -296,6 +309,10 @@ export default function AdminPage() {
           placeholder="Search posts or @handle"
         />
       </article>
+
+      {actionFeedback ? (
+        <article className="vibe-card p-3 text-center text-xs text-cyan-100">{actionFeedback}</article>
+      ) : null}
 
       <article className="vibe-card p-4">
         <h2 className="mb-3 text-sm font-semibold text-slate-200">Latest users</h2>

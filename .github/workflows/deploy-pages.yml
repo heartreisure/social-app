@@ -30,12 +30,62 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Coverage campaign
+        id: coverage_campaign
+        run: npm run test:coverage
+
+      - name: Coverage quality gate
+        id: coverage_gate
+        run: npm run coverage:check
+
+      - name: Runtime smoke interactions
+        id: runtime_smoke
+        run: npm run smoke:runtime:ci
+
+      - name: Permission regression campaign
+        id: permission_regression
+        run: npm run test:permissions
+
       - name: Build static export
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_DEMO_USER_ID: ${{ vars.NEXT_PUBLIC_DEMO_USER_ID }}
-        run: npm run build
+        run: npm run verify:prod && npm run build
+
+      - name: Route smoke checks
+        id: route_smoke
+        run: npm run smoke:routes
+
+      - name: Build quality artifact manifest
+        if: always()
+        env:
+          COVERAGE_CAMPAIGN_OUTCOME: ${{ steps.coverage_campaign.outcome }}
+          COVERAGE_GATE_OUTCOME: ${{ steps.coverage_gate.outcome }}
+          RUNTIME_SMOKE_OUTCOME: ${{ steps.runtime_smoke.outcome }}
+          PERMISSION_REGRESSION_OUTCOME: ${{ steps.permission_regression.outcome }}
+          ROUTE_SMOKE_OUTCOME: ${{ steps.route_smoke.outcome }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: npm run quality:manifest
+
+      - name: Schema compatibility check
+        if: always()
+        id: schema_compatibility
+        run: npm run quality:schema:check
+
+      - name: Upload quality artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-gates-${{ github.run_id }}
+          path: |
+            artifacts/quality/
+            coverage/coverage-summary.json
+          if-no-files-found: warn
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

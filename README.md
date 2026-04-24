@@ -38,3 +38,15 @@ The app is exported statically and published from `out/`.
 npm install
 npm run dev
 ```
+
+## Production hardening
+
+- Run baseline test suite: `npm run test:run`
+- Run production readiness gate: `npm run verify:prod`
+- Review deployment + moderation checklist: `docs/production-hardening.md`
+
+## Dashboard
+
+- Regenerate dashboard once: `npm run dashboard:refresh`
+- Keep dashboard refreshed every 30s: `npm run dashboard:watch`
+- Open generated dashboard: `docs/dashboard.html`

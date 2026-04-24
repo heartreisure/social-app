@@ -1,5 +1,7 @@
 "use client";
 
+import { getSupabaseRuntimeConfig } from "@/lib/runtime-config";
+
 type SupabaseAuthUser = {
   id: string;
   email?: string;
@@ -22,12 +24,7 @@ type RegisterPayload = {
 };
 
 function getAuthConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) {
-    return null;
-  }
-  return { url, anonKey };
+  return getSupabaseRuntimeConfig();
 }
 
 function getAccessToken() {
